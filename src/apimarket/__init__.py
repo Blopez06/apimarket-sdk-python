@@ -14,6 +14,7 @@ from kiota_abstractions.base_request_configuration import RequestConfiguration
 from kiota_abstractions.headers_collection import HeadersCollection
 from kiota_abstractions.request_adapter import RequestAdapter
 from kiota_http.httpx_request_adapter import HttpxRequestAdapter
+from kiota_http.kiota_client_factory import KiotaClientFactory
 from kiota_serialization_json.json_serialization_writer import JsonSerializationWriter
 
 from apimarket.api.imss.grupo.historial_laboral.historial_laboral_post_response import HistorialLaboralPostResponse
@@ -32,7 +33,32 @@ from apimarket.models.curp_a_p_i_response import CurpAPIResponse
 from apimarket.models.historial_data import HistorialData
 from apimarket.validations import validate_curp, validate_rfc, validate_nss
 
-nest_asyncio.apply()
+# Workaround: Python 3.14 changed asyncio.current_task() behavior, breaking
+# sniffio's asyncio detection. Fall back to get_running_loop() which still works.
+if sys.version_info >= (3, 14):
+    import sniffio as _sniffio
+    import sniffio._impl as _sniffio_impl
+    _original_sniffio_detect = _sniffio_impl.current_async_library
+
+    def _patched_sniffio_detect():
+        try:
+            return _original_sniffio_detect()
+        except _sniffio_impl.AsyncLibraryNotFoundError:
+            import asyncio as _asyncio
+            try:
+                _asyncio.get_running_loop()
+                return "asyncio"
+            except RuntimeError:
+                pass
+            raise
+
+    _sniffio.current_async_library = _patched_sniffio_detect
+    _sniffio_impl.current_async_library = _patched_sniffio_detect
+
+# nest_asyncio.apply() is intentionally NOT called here at module level.
+# Calling it globally patches ALL asyncio event loops, including the ones
+# anyio creates internally, which breaks asyncio.current_task() in Python 3.14.
+# It is applied lazily inside choice_process_scheduler only when needed (Jupyter).
 
 
 class EnvironmentTokenProvider(AccessTokenProvider):
@@ -48,7 +74,7 @@ class EnvironmentTokenProvider(AccessTokenProvider):
         pass
 
 
-def assemble(api_key: str = "", headers: dict[str, str] = None, sandbox: bool = False, async_client: bool = False):
+def assemble(api_key: str = "", headers: dict[str, str] = None, sandbox: bool = False, async_client: bool = False, idse_pro_bearer_token: str = "", idse_pro_api_key: str = ""):
     if headers is None:
         headers = {}
     collection = HeadersCollection()
@@ -60,9 +86,14 @@ def assemble(api_key: str = "", headers: dict[str, str] = None, sandbox: bool = 
         collection.add(k, v)
     di["async_client"] = async_client
     di["API_MARKET_API_KEY"] = config("APIMARKET_API_KEY", default=api_key)
+    di["IDSEPRO_BEARER_TOKEN"] = config("IDSEPRO_BEARER_TOKEN", default=idse_pro_bearer_token)
+    di["IDSEPRO_API_KEY"] = config("IDSEPRO_API_KEY", default=idse_pro_api_key)
     di[EnvironmentTokenProvider] = lambda di: EnvironmentTokenProvider(di["API_MARKET_API_KEY"])
     di[AccessTokenProvider] = lambda di: BaseBearerTokenAuthenticationProvider(di[EnvironmentTokenProvider])
-    di[RequestAdapter] = lambda di: HttpxRequestAdapter(di[AccessTokenProvider])
+    di[RequestAdapter] = lambda di: HttpxRequestAdapter(
+        di[AccessTokenProvider],
+        http_client=KiotaClientFactory.create_with_default_middleware()
+    )
     di[ApiMarketClient] = lambda di: ApiMarketClient(di[RequestAdapter])
     di[HeadersCollection] = collection
     di[RequestConfiguration] = lambda di: RequestConfiguration(headers=di[HeadersCollection])
@@ -102,8 +133,21 @@ def choice_process_scheduler(func):
     def wrapper(*args, **kwargs):
         if di["async_client"]:
             return func(*args, **kwargs)
-        loop = get_an_event_loop()
-        return loop.run_until_complete(func(*args, **kwargs))
+        try:
+            asyncio.get_running_loop()
+            # Inside a running event loop (e.g., Jupyter).
+            # Apply nest_asyncio lazily — only here, not globally — so it
+            # doesn't interfere with anyio's internal event loop management.
+            nest_asyncio.apply()
+            loop = get_an_event_loop()
+            return loop.run_until_complete(func(*args, **kwargs))
+        except RuntimeError:
+            # No running loop — use anyio.run() which properly registers
+            # the asyncio task so httpcore 1.x's anyio primitives work.
+            from anyio import run as anyio_run
+            async def _coro():
+                return await func(*args, **kwargs)
+            return anyio_run(_coro)
 
     return wrapper
 
@@ -290,3 +334,14 @@ def store_token(name: str, company: str = "", description: str = "", permissions
 @inject()
 def retrieve_permissions(client: ApiMarketClient = None, configuration: RequestConfiguration = None):
     return client.api.v2.apimarket.permissions.get, configuration
+
+
+@inject()
+def idse_listar_certificados(client: ApiMarketClient = None, configuration: RequestConfiguration = None):
+    idse_headers = HeadersCollection()
+    idse_headers.try_add("Authorization", f"Bearer {di['IDSEPRO_BEARER_TOKEN']}")
+    idse_headers.try_add("apikey", di["IDSEPRO_API_KEY"])
+    idse_config = RequestConfiguration(headers=idse_headers)
+    return choice_process_scheduler(
+        lambda: client.api.imss.grupo.idse_pro.certificados.listar_certificados.get(idse_config)
+    )()
