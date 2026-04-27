@@ -7,4 +7,9 @@
     - https://docs.pytest.org/en/stable/writing_plugins.html
 """
 
-# import pytest
+import pytest
+
+
+@pytest.fixture
+def anyio_backend():
+    return 'asyncio'

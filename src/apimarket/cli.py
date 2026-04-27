@@ -120,6 +120,19 @@ class PermissionDetailsAction(CLIAction):
         return retrieve_permissions()
 
 
+class IdseListarCertificadosAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        import dataclasses
+        import json
+        certs = idse_listar_certificados()
+        data = [
+            {k: v for k, v in dataclasses.asdict(c).items() if k != 'additional_data' and v is not None}
+            for c in certs
+        ]
+        print(json.dumps(data, default=str, ensure_ascii=False, indent=2))
+        setattr(namespace, self.dest, values)
+
+
 def parse_args(args):
     """Parse command line parameters
 
@@ -167,6 +180,9 @@ def parse_args(args):
                         help='Fetch Fiscal Data by RFC.')
     parser.add_argument('-sa', '--get-infonavit-subaccount-by-nss', nargs=1, metavar=('NSS'),
                         action=InfonavitSubAccountRetrieverAction, help='Fetch INFONAVIT subaccount by NSS.')
+    parser.add_argument('--idse-certificados', nargs=0,
+                        action=IdseListarCertificadosAction,
+                        help='Lista los certificados disponibles en IDSE Pro.')
     parser.add_argument("-v", "--verbose", dest="loglevel", help="set loglevel to INFO", action="store_const",
         const=logging.INFO, )
     parser.add_argument("-vv", "--very-verbose", dest="loglevel", help="set loglevel to DEBUG", action="store_const",
