@@ -8,7 +8,7 @@ UUID_PATTERN = re.compile(
 
 class InvalidFolioError(Exception):
     class Code(Enum):
-        INVALID_FORMAT = "INVALID_FOLIO_01"
+        INVALID_FORMAT = "INVALID_FOLIO_FORMAT"
 
     def __init__(self, folio: str, code: Code, message: str):
         self.folio = folio
@@ -22,9 +22,9 @@ class InvalidFolioError(Exception):
 
 class InvalidCURPError(Exception):
     class Code(Enum):
-        INVALID_LENGTH = "INVALID_CURP_01"
-        INVALID_FORMAT = "INVALID_CURP_02"
-        INVALID_DIGIT  = "INVALID_CURP_03"
+        INVALID_LENGTH = "INVALID_CURP_LENGTH"
+        INVALID_FORMAT = "INVALID_CURP_FORMAT"
+        INVALID_DIGIT  = "INVALID_CURP_DIGIT"
 
     def __init__(self, curp: str, code: Code, message: str):
         self.curp = curp
@@ -38,9 +38,9 @@ class InvalidCURPError(Exception):
 
 class InvalidNSSError(Exception):
     class Code(Enum):
-        INVALID_LENGTH = "INVALID_NSS_01"
-        INVALID_FORMAT = "INVALID_NSS_02"
-        INVALID_DIGIT  = "INVALID_NSS_03"
+        INVALID_LENGTH = "INVALID_NSS_LENGTH"
+        INVALID_FORMAT = "INVALID_NSS_FORMAT"
+        INVALID_DIGIT  = "INVALID_NSS_DIGIT"
 
     def __init__(self, nss: str, code: Code, message: str):
         self.nss = nss
@@ -54,7 +54,7 @@ class InvalidNSSError(Exception):
 
 class InvalidRFCError(Exception):
     class Code(Enum):
-        INVALID_FORMAT = "INVALID_RFC_01"
+        INVALID_FORMAT = "INVALID_RFC_FORMAT"
 
     def __init__(self, rfc: str, code: Code, message: str):
         self.rfc = rfc
@@ -64,6 +64,35 @@ class InvalidRFCError(Exception):
 
     def __str__(self):
         return f"[{self.code.value}] RFC: {self.rfc} - {self.message}"
+
+
+class InvalidBirthDateError(Exception):
+    class Code(Enum):
+        INVALID_BIRTH_DAY_FORMAT = "INVALID_BIRTH_DAY_FORMAT"
+        INVALID_BIRTH_MONTH_FORMAT = "INVALID_BIRTH_MONTH_FORMAT"
+        INVALID_BIRTH_YEAR_FORMAT = "INVALID_BIRTH_YEAR_FORMAT"
+
+    def __init__(self, value: str, code: Code, message: str):
+        self.value = value
+        self.code = code
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"[{self.code.value}] Value: {self.value} - {self.message}"
+
+
+def validate_birth_date(day, month, year):
+    day_str, month_str, year_str = str(day), str(month), str(year)
+    if not day_str.isdigit() or len(day_str) < 2:
+        raise InvalidBirthDateError(day_str, InvalidBirthDateError.Code.INVALID_BIRTH_DAY_FORMAT,
+                                    "El día de nacimiento debe tener al menos 2 dígitos (ej. '06').")
+    if not month_str.isdigit() or len(month_str) < 2:
+        raise InvalidBirthDateError(month_str, InvalidBirthDateError.Code.INVALID_BIRTH_MONTH_FORMAT,
+                                    "El mes de nacimiento debe tener al menos 2 dígitos (ej. '06').")
+    if not year_str.isdigit() or len(year_str) < 4:
+        raise InvalidBirthDateError(year_str, InvalidBirthDateError.Code.INVALID_BIRTH_YEAR_FORMAT,
+                                    "El año de nacimiento debe tener al menos 4 dígitos (ej. '1990').")
 
 
 def validate_folio_uuid(folio: str) -> str:

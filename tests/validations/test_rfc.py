@@ -24,4 +24,4 @@ class TestValidateRfc:
     def test_error_string_format(self):
         with pytest.raises(InvalidRFCError) as exc_info:
             validate_rfc("INVALIDO")
-        assert "INVALID_RFC_01" in str(exc_info.value)
+        assert "INVALID_RFC_FORMAT" in str(exc_info.value)

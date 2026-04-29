@@ -30,4 +30,4 @@ class TestValidateCurp:
     def test_error_string_format(self):
         with pytest.raises(InvalidCURPError) as exc_info:
             validate_curp("LOOA531113")
-        assert "INVALID_CURP_01" in str(exc_info.value)
+        assert "INVALID_CURP_LENGTH" in str(exc_info.value)

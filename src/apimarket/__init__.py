@@ -32,7 +32,7 @@ from apimarket.api.sep.grupo.validar_certificado.validar_certificado_get_respons
 from apimarket.api_market_client import ApiMarketClient
 from apimarket.models.curp_a_p_i_response import CurpAPIResponse
 from apimarket.models.historial_data import HistorialData
-from apimarket.validations import validate_curp, validate_rfc, validate_nss, validate_folio_uuid
+from apimarket.validations import validate_curp, validate_rfc, validate_nss, validate_folio_uuid, validate_birth_date
 
 # Workaround: Python 3.14 changed asyncio.current_task() behavior, breaking
 # sniffio's asyncio detection. Fall back to get_running_loop() which still works.
@@ -214,9 +214,10 @@ def get_rfc_from_curp(curp: str, client: ApiMarketClient = None, configuration: 
 
 @format_api
 @inject()
-def calculate_rfc(nombres: str, paterno: str, materno: str, diaNacimiento: int, mesNacimiento: int, anoNacimiento: int,
+def calculate_rfc(nombres: str, paterno: str, materno: str, diaNacimiento: str, mesNacimiento: str, anoNacimiento: str,
                   client: ApiMarketClient = None, configuration: RequestConfiguration = None) -> Union[
     Future[CalcularRfcPostResponse], CalcularRfcPostResponse]:
+    validate_birth_date(diaNacimiento, mesNacimiento, anoNacimiento)
     return client.api.sat.grupo.calcular_rfc.post, configuration
 
 

@@ -26,4 +26,4 @@ class TestValidateNss:
     def test_error_string_format(self):
         with pytest.raises(InvalidNSSError) as exc_info:
             validate_nss("1234567")
-        assert "INVALID_NSS_01" in str(exc_info.value)
+        assert "INVALID_NSS_LENGTH" in str(exc_info.value)
