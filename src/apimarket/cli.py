@@ -5,7 +5,7 @@ import sys
 
 from apimarket import *
 from apimarket import __version__
-from apimarket.validations import InvalidCURPError, InvalidNSSError, InvalidRFCError, InvalidFolioError
+from apimarket.validations import InvalidCURPError, InvalidNSSError, InvalidRFCError, InvalidFolioError, InvalidBirthDateError
 
 __author__ = "Carlos Eduardo Sanchez Torres (sanchezcarlosjr)"
 __copyright__ = "API MARKET"
@@ -27,7 +27,7 @@ class CLIAction(argparse.Action):
             values = [values]
         try:
             print(f"{to_json(self.fetch(*values))}")
-        except (InvalidCURPError, InvalidNSSError, InvalidRFCError, InvalidFolioError) as e:
+        except (InvalidCURPError, InvalidNSSError, InvalidRFCError, InvalidFolioError, InvalidBirthDateError) as e:
             print(f"Error [{e.code.value}]: {e.message}", file=sys.stderr)
             sys.exit(1)
         _logger.debug("Script ends here")
@@ -178,7 +178,7 @@ def parse_args(args):
     renapo.add_argument("-cc", "--calculate-curp", nargs=8,
         metavar=("NOMBRES", "PATERNO", "MATERNO", "DIA_NACIMIENTO", "MES_NACIMIENTO", "ANO_NACIMIENTO", "CLAVE_ENTIDAD", "SEXO"),
         action=GetCURPFromDetailsAction,
-        help="Obtiene CURP a partir de datos personales.")
+        help="Obtiene CURP a partir de datos personales.\n  Ejemplo: -cc \"Juan Carlos\" Garcia Lopez 01 01 1990 DF H\n  Nota: use comillas si el nombre tiene espacios.")
 
     sat = parser.add_argument_group("SAT")
     sat.add_argument("-ro", "--get-rfc", metavar="CURP",
@@ -187,7 +187,7 @@ def parse_args(args):
     sat.add_argument("-cr", "--calculate-rfc", nargs=6,
         metavar=("NOMBRES", "PATERNO", "MATERNO", "DIA_NACIMIENTO", "MES_NACIMIENTO", "ANO_NACIMIENTO"),
         action=CalculateRFCAction,
-        help="Calcula RFC a partir de datos personales.")
+        help="Calcula RFC a partir de datos personales.\n  Ejemplo: -cr \"Bryan Antonio\" Lopez Hernandez 06 06 1997\n  Nota: use comillas si el nombre tiene espacios.")
     sat.add_argument("-vs", "--validate-sat", nargs=4,
         metavar=("NOMBRE", "RFC", "REGIMEN", "CP"),
         action=ValidateSATDataAction,
@@ -223,7 +223,7 @@ def parse_args(args):
     sep.add_argument("-oc", "--get-cedula", nargs=3,
         metavar=("NOMBRES", "PATERNO", "MATERNO"),
         action=ObtainCedulaAction,
-        help="Obtiene cédula profesional por datos personales.")
+        help="Obtiene cédula profesional por datos personales.\n  Ejemplo: -oc \"Juan Carlos\" Garcia Lopez\n  Nota: use comillas si el nombre tiene espacios.")
 
     infonavit = parser.add_argument_group("INFONAVIT")
     infonavit.add_argument("-bc", "--search-credit", nargs=1, metavar="NSS",

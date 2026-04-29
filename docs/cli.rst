@@ -242,12 +242,12 @@ con el código correspondiente y sale con código 1:
 .. code-block:: bash
 
     $ apimarket -vc INVALIDA
-    Error [INVALID_CURP_01]: Longitud inválida: se esperaban 18 caracteres, se recibieron 8.
+    Error [INVALID_CURP_LENGTH]: Longitud inválida: se esperaban 18 caracteres, se recibieron 8.
 
     $ apimarket -vc 123456789012345678
-    Error [INVALID_CURP_02]: El formato del CURP es inválido.
+    Error [INVALID_CURP_FORMAT]: El formato del CURP es inválido.
 
     $ apimarket -vc LOOA531113HTCPBN09
-    Error [INVALID_CURP_03]: Dígito verificador inválido.
+    Error [INVALID_CURP_DIGIT]: Dígito verificador inválido.
 
 Para el catálogo completo de códigos de error ver :doc:`error_catalog`.
