@@ -1,15 +1,17 @@
-"""
-    Dummy conftest.py for apimarket.
-
-    If you don't know what this is for, just leave it empty.
-    Read more about conftest.py under:
-    - https://docs.pytest.org/en/stable/fixture.html
-    - https://docs.pytest.org/en/stable/writing_plugins.html
-"""
-
 import pytest
+import apimarket
 
 
 @pytest.fixture
 def anyio_backend():
     return 'asyncio'
+
+
+@pytest.fixture
+def sdk():
+    apimarket.assemble(async_client=False)
+
+
+@pytest.fixture
+def sdk_async():
+    apimarket.assemble(async_client=True)

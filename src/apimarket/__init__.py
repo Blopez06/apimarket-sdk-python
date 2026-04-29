@@ -20,6 +20,7 @@ from kiota_serialization_json.json_serialization_writer import JsonSerialization
 from apimarket.api.imss.grupo.historial_laboral.historial_laboral_post_response import HistorialLaboralPostResponse
 from apimarket.api.infonavit.grupo.buscar_credito.buscar_credito_post_response import BuscarCreditoPostResponse
 from apimarket.api.infonavit.grupo.obtener_cuenta.obtener_cuenta_post_response import ObtenerCuentaPostResponse
+from apimarket.api.renapo.grupo.buscar_nacimiento.buscar_nacimiento_post_response import BuscarNacimientoPostResponse
 from apimarket.api.renapo.grupo.obtener_curp.obtener_curp_post_response import ObtenerCurpPostResponse
 from apimarket.api.sat.grupo.calcular_rfc.calcular_rfc_post_response import CalcularRfcPostResponse
 from apimarket.api.sat.grupo.obtener_datos.obtener_datos_post_response import ObtenerDatosPostResponse
@@ -27,11 +28,11 @@ from apimarket.api.sat.grupo.obtener_rfc.obtener_rfc_post_response import Obtene
 from apimarket.api.sat.grupo.validar_datos.validar_datos_post_response import ValidarDatosPostResponse
 from apimarket.api.sep.grupo.obtener_cedula.obtener_cedula_post_response import ObtenerCedulaPostResponse
 from apimarket.api.sep.grupo.validar_cedula.validar_cedula_post_response import ValidarCedulaPostResponse
-from apimarket.api.sep.grupo.validar_certificado.validar_certificado_post_response import ValidarCertificadoPostResponse
+from apimarket.api.sep.grupo.validar_certificado.validar_certificado_get_response import ValidarCertificadoGetResponse
 from apimarket.api_market_client import ApiMarketClient
 from apimarket.models.curp_a_p_i_response import CurpAPIResponse
 from apimarket.models.historial_data import HistorialData
-from apimarket.validations import validate_curp, validate_rfc, validate_nss
+from apimarket.validations import validate_curp, validate_rfc, validate_nss, validate_folio_uuid
 
 # Workaround: Python 3.14 changed asyncio.current_task() behavior, breaking
 # sniffio's asyncio detection. Fall back to get_running_loop() which still works.
@@ -154,12 +155,9 @@ def choice_process_scheduler(func):
 
 def format_api(func):
     def wrapper(*args, **kwargs):
-        # Get the function's argument names and default values
         func_signature = inspect.signature(func)
         bound_arguments = func_signature.bind(*args, **kwargs)
         bound_arguments.apply_defaults()
-
-        # Extract the arguments as a dictionary
         arguments = bound_arguments.arguments
 
         api, configuration = func(*args, **kwargs)
@@ -168,6 +166,9 @@ def format_api(func):
 
         return choice_process_scheduler(lambda: api(request_configuration=configuration))()
 
+    # Parameter names in @format_api-decorated functions must match the API's
+    # query parameter names exactly (camelCase). Renaming them to snake_case
+    # would break the HTTP request since names are extracted via inspect.signature.
     return wrapper
 
 
@@ -184,6 +185,14 @@ def fetch_curp_details(curp: str, client: ApiMarketClient = None, configuration:
     Future[CurpAPIResponse], CurpAPIResponse]:
     validate_curp(curp)
     return client.api.renapo.grupo.valida_curp.post, configuration
+
+
+@format_api
+@inject()
+def get_birth_record(curp: str, client: ApiMarketClient = None, configuration: RequestConfiguration = None) -> Union[
+    Future[BuscarNacimientoPostResponse], BuscarNacimientoPostResponse]:
+    validate_curp(curp)
+    return client.api.renapo.grupo.buscar_nacimiento.post, configuration
 
 
 @format_api
@@ -234,14 +243,14 @@ def check_nss_validity(nss: str, curp: str, client: ApiMarketClient = None, conf
 
 @format_api
 @inject()
-def get_clinica_by_curp(curp: str, client: ApiMarketClient = None, configuration: RequestConfiguration = None):
+def get_clinic_by_curp(curp: str, client: ApiMarketClient = None, configuration: RequestConfiguration = None):
     validate_curp(curp)
     return client.api.imss.grupo.con_clinica.post, configuration
 
 
 @format_api
 @inject()
-def consult_clinica_by_curp(curp: str, client: ApiMarketClient = None, configuration: RequestConfiguration = None):
+def consult_clinic_by_curp(curp: str, client: ApiMarketClient = None, configuration: RequestConfiguration = None):
     validate_curp(curp)
     return client.api.imss.grupo.con_clinica.post, configuration
 
@@ -265,7 +274,8 @@ def validate_sep_cedula(cedula: str, client: ApiMarketClient = None, configurati
 @format_api
 @inject()
 def validate_sep_certificate(folio: str, client: ApiMarketClient = None, configuration: RequestConfiguration = None) -> \
-        Union[Future[ValidarCertificadoPostResponse], ValidarCertificadoPostResponse]:
+        Union[Future[ValidarCertificadoGetResponse], ValidarCertificadoGetResponse]:
+    validate_folio_uuid(folio)
     return client.api.sep.grupo.validar_certificado.post, configuration
 
 
@@ -337,7 +347,7 @@ def retrieve_permissions(client: ApiMarketClient = None, configuration: RequestC
 
 
 @inject()
-def idse_listar_certificados(client: ApiMarketClient = None, configuration: RequestConfiguration = None):
+def idse_list_certificates(client: ApiMarketClient = None, configuration: RequestConfiguration = None):
     idse_headers = HeadersCollection()
     idse_headers.try_add("Authorization", f"Bearer {di['IDSEPRO_BEARER_TOKEN']}")
     idse_headers.try_add("apikey", di["IDSEPRO_API_KEY"])

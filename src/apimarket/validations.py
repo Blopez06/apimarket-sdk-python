@@ -1,59 +1,90 @@
 import re
+from enum import Enum
 
-class InvalidCURPError(Exception):
-    """Exception raised for invalid CURP."""
+UUID_PATTERN = re.compile(
+    r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
+)
 
-    def __init__(self, curp, message):
-        self.curp = curp
+
+class InvalidFolioError(Exception):
+    class Code(Enum):
+        INVALID_FORMAT = "INVALID_FOLIO_01"
+
+    def __init__(self, folio: str, code: Code, message: str):
+        self.folio = folio
+        self.code = code
         self.message = message
         super().__init__(self.message)
 
     def __str__(self):
-        return f"CURP: {self.curp} - {self.message}"
+        return f"[{self.code.value}] Folio: {self.folio} - {self.message}"
+
+
+class InvalidCURPError(Exception):
+    class Code(Enum):
+        INVALID_LENGTH = "INVALID_CURP_01"
+        INVALID_FORMAT = "INVALID_CURP_02"
+        INVALID_DIGIT  = "INVALID_CURP_03"
+
+    def __init__(self, curp: str, code: Code, message: str):
+        self.curp = curp
+        self.code = code
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"[{self.code.value}] CURP: {self.curp} - {self.message}"
 
 
 class InvalidNSSError(Exception):
-    """Exception raised for invalid NSS."""
+    class Code(Enum):
+        INVALID_LENGTH = "INVALID_NSS_01"
+        INVALID_FORMAT = "INVALID_NSS_02"
+        INVALID_DIGIT  = "INVALID_NSS_03"
 
-    def __init__(self, nss, message):
+    def __init__(self, nss: str, code: Code, message: str):
         self.nss = nss
+        self.code = code
         self.message = message
         super().__init__(self.message)
 
     def __str__(self):
-        return f"NSS: {self.nss} - {self.message}"
+        return f"[{self.code.value}] NSS: {self.nss} - {self.message}"
 
 
 class InvalidRFCError(Exception):
-    """Exception raised for invalid RFC."""
+    class Code(Enum):
+        INVALID_FORMAT = "INVALID_RFC_01"
 
-    def __init__(self, rfc, message):
+    def __init__(self, rfc: str, code: Code, message: str):
         self.rfc = rfc
+        self.code = code
         self.message = message
         super().__init__(self.message)
 
     def __str__(self):
-        return f"RFC: {self.rfc} - {self.message}"
+        return f"[{self.code.value}] RFC: {self.rfc} - {self.message}"
+
+
+def validate_folio_uuid(folio: str) -> str:
+    if not UUID_PATTERN.match(folio):
+        raise InvalidFolioError(folio, InvalidFolioError.Code.INVALID_FORMAT, "El folio debe tener formato UUID válido (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).")
+    return folio
 
 
 def validate_rfc(rfc):
-    """Validate the format of an RFC."""
-
-    # RFC for individuals
     pattern_individual = r'^[A-Z]{4}[0-9]{6}[A-Z0-9]{3}$'
-
-    # RFC for companies
-    pattern_company = r'^[A-Z]{3}[0-9]{6}[A-Z0-9]{3}$'
+    pattern_company    = r'^[A-Z]{3}[0-9]{6}[A-Z0-9]{3}$'
 
     if not (re.match(pattern_individual, rfc) or re.match(pattern_company, rfc)):
-        raise InvalidRFCError(rfc, "Invalid RFC format.")
+        raise InvalidRFCError(rfc, InvalidRFCError.Code.INVALID_FORMAT, "Formato de RFC inválido.")
 
     return rfc
 
 
 def calculate_nss_verification_digit(nss):
     if len(nss) < 10:
-        raise InvalidNSSError(nss, "Invalid length.")
+        raise InvalidNSSError(nss, InvalidNSSError.Code.INVALID_LENGTH, "Longitud inválida.")
 
     acc = 0
     for i in range(10):
@@ -67,48 +98,43 @@ def calculate_nss_verification_digit(nss):
 
 
 def calculate_curp_verification_digit(curp17):
-    """Calculate the check digit for a CURP."""
-    diccionario = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"
-    lngSuma = 0.0
+    dictionary = "0123456789ABCDEFGHIJKLMNÑOPQRSTUVWXYZ"
+    checksum = 0.0
 
     for i in range(17):
-        lngSuma += diccionario.index(curp17[i]) * (18 - i)
+        checksum += dictionary.index(curp17[i]) * (18 - i)
 
-    lngDigito = 10 - (lngSuma % 10)
+    digit = 10 - (checksum % 10)
 
-    if lngDigito == 10:
+    if digit == 10:
         return '0'
-    return str(int(lngDigito))
+    return str(int(digit))
 
 
 def validate_curp(curp):
     if len(curp) != 18:
-        raise InvalidCURPError(curp, f"Invalid length {len(curp)}.")
+        raise InvalidCURPError(curp, InvalidCURPError.Code.INVALID_LENGTH, f"Longitud inválida: se esperaban 18 caracteres, se recibieron {len(curp)}.")
 
     pattern = r'^[A-Z][AEIXOU][A-Z]{2}[0-9]{2}(0[1-9]|1[0-2])(0[1-9]|1[0-9]|2[0-9]|3[0-1])[HMX](AS|BC|BS|CC|CS|CH|CL|CM|DF|DG|GT|GR|HG|JC|MC|MN|MS|NT|NL|OC|PL|QT|QR|SP|SL|SR|TC|TS|TL|VZ|YN|ZS|NE)[B-DF-HJ-NP-TV-Z]{3}[0-9A-Z][0-9]$'
 
     if not re.match(pattern, curp):
-        raise InvalidCURPError(curp, f"CURP has invalid format.")
+        raise InvalidCURPError(curp, InvalidCURPError.Code.INVALID_FORMAT, "El formato del CURP es inválido.")
 
     digit = calculate_curp_verification_digit(curp[:17])
     if curp[17] != digit:
-        raise InvalidCURPError(curp, f"CURP has an invalid check digit. It must be {digit}.")
+        raise InvalidCURPError(curp, InvalidCURPError.Code.INVALID_DIGIT, "Dígito verificador inválido.")
 
     return curp
 
 
 def validate_nss(nss):
-    """Validate the format and check digit of an NSS."""
-    # Check the length
     if len(nss) != 11:
-        raise InvalidNSSError(nss, "Invalid length.")
+        raise InvalidNSSError(nss, InvalidNSSError.Code.INVALID_LENGTH, f"Longitud inválida: se esperaban 11 dígitos, se recibieron {len(nss)}.")
 
-    # Check if all characters are digits
     if not nss.isdigit():
-        raise InvalidNSSError(nss, "Invalid format: NSS should only contain digits.")
+        raise InvalidNSSError(nss, InvalidNSSError.Code.INVALID_FORMAT, "El NSS solo debe contener dígitos.")
 
-    # Validate check digit
     if nss[10] != calculate_nss_verification_digit(nss[:10]):
-        raise InvalidNSSError(nss, "Invalid check digit.")
+        raise InvalidNSSError(nss, InvalidNSSError.Code.INVALID_DIGIT, "Dígito verificador inválido.")
 
     return nss
