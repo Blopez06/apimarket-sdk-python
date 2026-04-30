@@ -3,7 +3,7 @@ import apimarket
 from apimarket.validations import InvalidCURPError, InvalidNSSError
 from kiota_abstractions.api_error import APIError
 
-CURP_VALIDA = "LOOA531113HTCPBN07"
+CURP_VALIDA = "XEXX010101MNEXXXA4"
 NSS_VALIDO = "12345678952"
 
 
@@ -11,7 +11,7 @@ class TestImssUnit:
     @pytest.mark.parametrize("curp, expected_code", [
         ("CORTA",                InvalidCURPError.Code.INVALID_LENGTH),
         ("123456789012345678",   InvalidCURPError.Code.INVALID_FORMAT),
-        ("LOOA531113HTCPBN09",   InvalidCURPError.Code.INVALID_DIGIT),
+        ("XEXX010101MNEXXXA9",   InvalidCURPError.Code.INVALID_DIGIT),
     ])
     def test_locate_nss_invalid_curp_raises(self, curp, expected_code):
         with pytest.raises(InvalidCURPError) as exc_info:
@@ -30,7 +30,7 @@ class TestImssUnit:
 
     @pytest.mark.parametrize("curp, expected_code", [
         ("CORTA",                InvalidCURPError.Code.INVALID_LENGTH),
-        ("LOOA531113HTCPBN09",   InvalidCURPError.Code.INVALID_DIGIT),
+        ("XEXX010101MNEXXXA9",   InvalidCURPError.Code.INVALID_DIGIT),
     ])
     def test_get_clinic_by_curp_invalid_curp_raises(self, curp, expected_code):
         with pytest.raises(InvalidCURPError) as exc_info:

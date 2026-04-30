@@ -4,7 +4,7 @@ from apimarket.validations import validate_curp, InvalidCURPError
 
 class TestValidateCurp:
     @pytest.mark.parametrize("curp", [
-        "LOOA531113HTCPBN07",
+        "XEXX010101MNEXXXA4",
     ])
     def test_valid_curp(self, curp):
         assert validate_curp(curp) == curp
@@ -16,10 +16,10 @@ class TestValidateCurp:
         assert validate_curp(curp) == curp
 
     @pytest.mark.parametrize("curp, expected_code, message_fragment", [
-        ("LOOA531113",           InvalidCURPError.Code.INVALID_LENGTH, "18 caracteres"),
-        ("LOOA531113HTCPBN07XX", InvalidCURPError.Code.INVALID_LENGTH, "18 caracteres"),
+        ("XEXX010101",           InvalidCURPError.Code.INVALID_LENGTH, "18 caracteres"),
+        ("XEXX010101MNEXXXA4XX", InvalidCURPError.Code.INVALID_LENGTH, "18 caracteres"),
         ("123456789012345678",   InvalidCURPError.Code.INVALID_FORMAT, "formato"),
-        ("LOOA531113HTCPBN09",   InvalidCURPError.Code.INVALID_DIGIT,  "Dígito verificador"),
+        ("XEXX010101MNEXXXA9",   InvalidCURPError.Code.INVALID_DIGIT,  "Dígito verificador"),
     ])
     def test_invalid_curp(self, curp, expected_code, message_fragment):
         with pytest.raises(InvalidCURPError) as exc_info:
@@ -29,5 +29,5 @@ class TestValidateCurp:
 
     def test_error_string_format(self):
         with pytest.raises(InvalidCURPError) as exc_info:
-            validate_curp("LOOA531113")
+            validate_curp("XEXX010101")
         assert "INVALID_CURP_LENGTH" in str(exc_info.value)

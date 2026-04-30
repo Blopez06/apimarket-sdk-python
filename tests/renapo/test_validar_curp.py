@@ -6,10 +6,10 @@ from kiota_abstractions.api_error import APIError
 
 class TestValidarCurpUnit:
     @pytest.mark.parametrize("curp, expected_code", [
-        ("LOOA531113",           InvalidCURPError.Code.INVALID_LENGTH),
-        ("LOOA531113HTCPBN07XX", InvalidCURPError.Code.INVALID_LENGTH),
+        ("XEXX010101",           InvalidCURPError.Code.INVALID_LENGTH),
+        ("XEXX010101MNEXXXA4XX", InvalidCURPError.Code.INVALID_LENGTH),
         ("123456789012345678",   InvalidCURPError.Code.INVALID_FORMAT),
-        ("LOOA531113HTCPBN09",   InvalidCURPError.Code.INVALID_DIGIT),
+        ("XEXX010101MNEXXXA9",   InvalidCURPError.Code.INVALID_DIGIT),
     ])
     def test_invalid_curp_raises_before_api_call(self, curp, expected_code):
         with pytest.raises(InvalidCURPError) as exc_info:
@@ -19,7 +19,7 @@ class TestValidarCurpUnit:
 
 @pytest.mark.integracion
 class TestValidarCurpIntegration:
-    CURP = "LOOA531113HTCPBN07"
+    CURP = "XEXX010101MNEXXXA4"
 
     def test_reaches_api_without_validation_error(self, sdk):
         try:
@@ -65,7 +65,7 @@ class TestValidarCurpIntegration:
 @pytest.mark.anyio
 async def test_async_valid_curp_returns_success(sdk_async):
     try:
-        response = await apimarket.fetch_curp_details("LOOA531113HTCPBN07")
+        response = await apimarket.fetch_curp_details("XEXX010101MNEXXXA4")
         if response.success and response.data:
             assert response.data.nombres is not None
     except APIError:

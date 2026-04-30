@@ -9,6 +9,15 @@ from typing import Any, Callable, Dict, Optional
 class ListarCertificados5XXError(APIError):
     additional_data: Dict[str, Any] = field(default_factory=dict)
 
+    # Código de validación único para la solicitud
+    codigo_validacion: Optional[str] = None
+    # Mensaje descriptivo del resultado
+    message: Optional[str] = None
+    # Código de estado HTTP
+    status: Optional[int] = None
+    # Indica si la solicitud fue exitosa
+    success: Optional[bool] = None
+
     @staticmethod
     def create_from_discriminator_value(parse_node: ParseNode) -> ListarCertificados5XXError:
         if not parse_node:
@@ -21,6 +30,10 @@ class ListarCertificados5XXError(APIError):
     def serialize(self, writer: SerializationWriter) -> None:
         if not writer:
             raise TypeError("writer cannot be null.")
+        writer.write_str_value("codigoValidacion", self.codigo_validacion)
+        writer.write_str_value("message", self.message)
+        writer.write_int_value("status", self.status)
+        writer.write_bool_value("success", self.success)
         writer.write_additional_data_value(self.additional_data)
 
     @property

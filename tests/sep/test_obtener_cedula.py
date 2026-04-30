@@ -3,15 +3,15 @@ import apimarket
 from apimarket.validations import InvalidCURPError
 from kiota_abstractions.api_error import APIError
 
-CURP = "LOOA531113HTCPBN07"
+CURP = "XEXX010101MNEXXXA4"
 
 
 class TestObtenerCedulaUnit:
     @pytest.mark.parametrize("curp, expected_code", [
-        ("LOOA531113",           InvalidCURPError.Code.INVALID_LENGTH),
-        ("LOOA531113HTCPBN07XX", InvalidCURPError.Code.INVALID_LENGTH),
+        ("XEXX010101",           InvalidCURPError.Code.INVALID_LENGTH),
+        ("XEXX010101MNEXXXA4XX", InvalidCURPError.Code.INVALID_LENGTH),
         ("123456789012345678",   InvalidCURPError.Code.INVALID_FORMAT),
-        ("LOOA531113HTCPBN09",   InvalidCURPError.Code.INVALID_DIGIT),
+        ("XEXX010101MNEXXXA9",   InvalidCURPError.Code.INVALID_DIGIT),
     ])
     def test_invalid_curp_raises_before_api_call(self, curp, expected_code):
         with pytest.raises(InvalidCURPError) as exc_info:

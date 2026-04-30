@@ -171,10 +171,10 @@ def parse_args(args):
     renapo = parser.add_argument_group("RENAPO")
     renapo.add_argument("-bn", "--birth-record", dest="birth_record",
         metavar="CURP", type=str, action=GetBirthRecordAction,
-        help="Busca el acta de nacimiento por CURP.\n  Ejemplo: LOOA531113HTCPBN07")
+        help="Busca el acta de nacimiento por CURP.\n  Ejemplo: XEXX010101MNEXXXA4")
     renapo.add_argument("-vc", "--validate-curp", dest="curp",
         metavar="CURP", type=str, action=CURPDetailsAction,
-        help="Valida un CURP.\n  Ejemplo: LOOA531113HTCPBN07")
+        help="Valida un CURP.\n  Ejemplo: XEXX010101MNEXXXA4")
     renapo.add_argument("-cc", "--calculate-curp", nargs=8,
         metavar=("NOMBRES", "PATERNO", "MATERNO", "DIA_NACIMIENTO", "MES_NACIMIENTO", "ANO_NACIMIENTO", "CLAVE_ENTIDAD", "SEXO"),
         action=GetCURPFromDetailsAction,
