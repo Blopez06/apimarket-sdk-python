@@ -282,9 +282,10 @@ def validate_sep_certificate(folio: str, client: ApiMarketClient = None, configu
 
 @format_api
 @inject()
-def obtain_sep_cedula(nombres: str, paterno: str, materno: str, client: ApiMarketClient = None,
+def obtain_sep_cedula(curp: str, client: ApiMarketClient = None,
                       configuration: RequestConfiguration = None) -> Union[
     Future[ObtenerCedulaPostResponse], ObtenerCedulaPostResponse]:
+    validate_curp(curp)
     return client.api.sep.grupo.obtener_cedula.post, configuration
 
 
