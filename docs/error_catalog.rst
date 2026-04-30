@@ -82,6 +82,28 @@ NSS — ``InvalidNSSError``
 
 ----
 
+Fecha de nacimiento — ``InvalidBirthDateError``
+------------------------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 28 50
+
+   * - Código
+     - ``InvalidBirthDateError.Code``
+     - Descripción
+   * - ``INVALID_BIRTH_DAY_FORMAT``
+     - ``INVALID_BIRTH_DAY_FORMAT``
+     - El día de nacimiento no tiene al menos 2 dígitos numéricos (ej. ``'06'``).
+   * - ``INVALID_BIRTH_MONTH_FORMAT``
+     - ``INVALID_BIRTH_MONTH_FORMAT``
+     - El mes de nacimiento no tiene al menos 2 dígitos numéricos (ej. ``'06'``).
+   * - ``INVALID_BIRTH_YEAR_FORMAT``
+     - ``INVALID_BIRTH_YEAR_FORMAT``
+     - El año de nacimiento no tiene al menos 4 dígitos numéricos (ej. ``'1990'``).
+
+----
+
 Folio UUID — ``InvalidFolioError``
 ------------------------------------
 
@@ -185,3 +207,12 @@ Resumen de códigos
    * - ``INVALID_FOLIO_FORMAT``
      - ``InvalidFolioError``
      - Formato UUID inválido
+   * - ``INVALID_BIRTH_DAY_FORMAT``
+     - ``InvalidBirthDateError``
+     - Día de nacimiento sin formato de 2 dígitos
+   * - ``INVALID_BIRTH_MONTH_FORMAT``
+     - ``InvalidBirthDateError``
+     - Mes de nacimiento sin formato de 2 dígitos
+   * - ``INVALID_BIRTH_YEAR_FORMAT``
+     - ``InvalidBirthDateError``
+     - Año de nacimiento sin formato de 4 dígitos
