@@ -95,8 +95,13 @@ class ValidateCertificateAction(CLIAction):
 
 
 class ObtainCedulaAction(CLIAction):
-    def fetch(self, nombres, paterno, materno):
-        return obtain_sep_cedula(nombres, paterno, materno)
+    def fetch(self, curp):
+        return obtain_sep_cedula(curp)
+
+
+class SearchLista69bAction(CLIAction):
+    def fetch(self, rfc):
+        return search_sat_lista69b(rfc=rfc)
 
 
 class ValidateSATDataAction(CLIAction):
@@ -158,9 +163,9 @@ def parse_args(args):
             "\n"
             "  apimarket [RENAPO]    -bn CURP | -vc CURP | -cc NOMBRES PATERNO MATERNO DIA MES AÑO ENTIDAD SEXO\n"
             "  apimarket [SAT]       -ro CURP | -cr NOMBRES PATERNO MATERNO DIA MES AÑO\n"
-            "                        -vs NOMBRE RFC REGIMEN CP | -df RFC\n"
+            "                        -vs NOMBRE RFC REGIMEN CP | -df RFC | -l69 RFC\n"
             "  apimarket [IMSS]      -lu CP | -ln CURP | -vi NSS CURP | -cl CURP | -hl CURP NSS\n"
-            "  apimarket [SEP]       -ce CEDULA | -vr FOLIO | -oc NOMBRES PATERNO MATERNO\n"
+            "  apimarket [SEP]       -ce CEDULA | -vr FOLIO | -oc CURP\n"
             "  apimarket [INFONAVIT] -bc NSS | -si NSS\n"
             "  apimarket [IDSE Pro]  -lc\n"
             "  apimarket [Account]   -pm | -gt NOMBRE EMPRESA DESCRIPCION PERMISOS RFC CIEC\n"
@@ -195,6 +200,9 @@ def parse_args(args):
     sat.add_argument("-df", "--fiscal-data", nargs=1, metavar="RFC",
         action=FiscalDataRetrieverAction,
         help="Obtiene datos fiscales por RFC.")
+    sat.add_argument("-l69", "--lista69b", metavar="RFC",
+        action=SearchLista69bAction,
+        help="Consulta la Lista 69-B del SAT (lista negra) por RFC.\n  Ejemplo: -l69 GOAJ900101AB1")
 
     imss = parser.add_argument_group("IMSS")
     imss.add_argument("-lu", "--locate-umf", nargs=1, metavar="CP",
@@ -220,10 +228,9 @@ def parse_args(args):
     sep.add_argument("-vr", "--validate-certificate", metavar="FOLIO",
         action=ValidateCertificateAction,
         help="Valida un certificado por folio.")
-    sep.add_argument("-oc", "--get-cedula", nargs=3,
-        metavar=("NOMBRES", "PATERNO", "MATERNO"),
+    sep.add_argument("-oc", "--get-cedula", metavar="CURP",
         action=ObtainCedulaAction,
-        help="Obtiene cédula profesional por datos personales.\n  Ejemplo: -oc \"Juan Carlos\" Garcia Lopez\n  Nota: use comillas si el nombre tiene espacios.")
+        help="Obtiene cédulas profesionales por CURP.\n  Ejemplo: -oc XEXX010101MNEXXXA4")
 
     infonavit = parser.add_argument_group("INFONAVIT")
     infonavit.add_argument("-bc", "--search-credit", nargs=1, metavar="NSS",

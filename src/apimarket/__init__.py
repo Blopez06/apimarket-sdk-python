@@ -26,6 +26,7 @@ from apimarket.api.sat.grupo.calcular_rfc.calcular_rfc_post_response import Calc
 from apimarket.api.sat.grupo.obtener_datos.obtener_datos_post_response import ObtenerDatosPostResponse
 from apimarket.api.sat.grupo.obtener_rfc.obtener_rfc_post_response import ObtenerRfcPostResponse
 from apimarket.api.sat.grupo.validar_datos.validar_datos_post_response import ValidarDatosPostResponse
+from apimarket.api.sat.v2.lista69b.lista69b_post_response import Lista69bPostResponse
 from apimarket.api.sep.grupo.obtener_cedula.obtener_cedula_post_response import ObtenerCedulaPostResponse
 from apimarket.api.sep.grupo.validar_cedula.validar_cedula_post_response import ValidarCedulaPostResponse
 from apimarket.api.sep.grupo.validar_certificado.validar_certificado_get_response import ValidarCertificadoGetResponse
@@ -329,6 +330,17 @@ def get_mexican_fiscal_data_with_rfc(rfc: str, client: ApiMarketClient = None,
     Future[ObtenerDatosPostResponse], ObtenerDatosPostResponse]:
     validate_rfc(rfc)
     return client.api.sat.grupo.obtener_datos.post, configuration
+
+
+@format_api
+@inject()
+def search_sat_lista69b(rfc: str = None, nombre_contribuyente: str = None,
+                        client: ApiMarketClient = None,
+                        configuration: RequestConfiguration = None) -> Union[
+    Future[Lista69bPostResponse], Lista69bPostResponse]:
+    if rfc:
+        validate_rfc(rfc)
+    return client.api.sat.v2.lista69b.post, configuration
 
 
 @format_api
