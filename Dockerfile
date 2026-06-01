@@ -19,8 +19,7 @@ COPY README.rst* LICENSE.txt* ./
 # 5. Copiamos el código fuente (importante para que el modo editable -e funcione)
 COPY src ./src
 
-# 6. HACK DE VERSIÓN:
-# Evita que setuptools-scm falle al no encontrar el historial de Git
+# 6. Evita que setuptools-scm falle al no encontrar el historial de Git
 ENV SETUPTOOLS_SCM_PRETEND_VERSION=0.0.1
 # Asegura que los logs de Python se vean en tiempo real en la terminal
 ENV PYTHONUNBUFFERED=1

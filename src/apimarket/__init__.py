@@ -1,6 +1,7 @@
 import asyncio
 import inspect
 import sys
+import warnings
 from asyncio import Future
 from dataclasses import make_dataclass
 from typing import Union
@@ -30,6 +31,9 @@ from apimarket.api.sat.v2.lista69b.lista69b_post_response import Lista69bPostRes
 from apimarket.api.sep.grupo.obtener_cedula.obtener_cedula_post_response import ObtenerCedulaPostResponse
 from apimarket.api.sep.grupo.validar_cedula.validar_cedula_post_response import ValidarCedulaPostResponse
 from apimarket.api.sep.grupo.validar_certificado.validar_certificado_get_response import ValidarCertificadoGetResponse
+# Backward compat: the old class name is kept as a deprecated alias
+from apimarket.api.sep.grupo.validar_certificado import validar_certificado_post_response as _vcp_mod
+ValidarCertificadoPostResponse = ValidarCertificadoGetResponse  # same object, warning fires on direct module import
 from apimarket.api_market_client import ApiMarketClient
 from apimarket.models.curp_a_p_i_response import CurpAPIResponse
 from apimarket.models.historial_data import HistorialData
@@ -215,11 +219,25 @@ def get_rfc_from_curp(curp: str, client: ApiMarketClient = None, configuration: 
 
 @format_api
 @inject()
-def calculate_rfc(nombres: str, paterno: str, materno: str, diaNacimiento: str, mesNacimiento: str, anoNacimiento: str,
-                  client: ApiMarketClient = None, configuration: RequestConfiguration = None) -> Union[
+def _calculate_rfc(nombres: str, paterno: str, materno: str, diaNacimiento: str, mesNacimiento: str, anoNacimiento: str,
+                   client: ApiMarketClient = None, configuration: RequestConfiguration = None) -> Union[
     Future[CalcularRfcPostResponse], CalcularRfcPostResponse]:
     validate_birth_date(diaNacimiento, mesNacimiento, anoNacimiento)
     return client.api.sat.grupo.calcular_rfc.post, configuration
+
+
+def calculate_rfc(nombres: str, paterno: str, materno: str, diaNacimiento, mesNacimiento, anoNacimiento, **kwargs):
+    """Calcula RFC. Acepta fechas como str ('06') o como int (deprecado)."""
+    if isinstance(diaNacimiento, int):
+        warnings.warn(
+            "calculate_rfc() con fechas como int (ej. 6) está deprecado. "
+            "Use strings con cero al inicio: diaNacimiento='06', mesNacimiento='06', anoNacimiento='1997'.",
+            DeprecationWarning, stacklevel=2
+        )
+        diaNacimiento = f"{diaNacimiento:02d}"
+        mesNacimiento = f"{mesNacimiento:02d}"
+        anoNacimiento = str(anoNacimiento)
+    return _calculate_rfc(nombres, paterno, materno, diaNacimiento, mesNacimiento, anoNacimiento, **kwargs)
 
 
 @format_api
@@ -283,11 +301,28 @@ def validate_sep_certificate(folio: str, client: ApiMarketClient = None, configu
 
 @format_api
 @inject()
-def obtain_sep_cedula(curp: str, client: ApiMarketClient = None,
-                      configuration: RequestConfiguration = None) -> Union[
+def _obtain_sep_cedula(curp: str, client: ApiMarketClient = None,
+                       configuration: RequestConfiguration = None) -> Union[
     Future[ObtenerCedulaPostResponse], ObtenerCedulaPostResponse]:
     validate_curp(curp)
     return client.api.sep.grupo.obtener_cedula.post, configuration
+
+
+def obtain_sep_cedula(curp: str, paterno: str = None, materno: str = None, **kwargs):
+    """Obtiene cédulas SEP por CURP. La firma antigua (nombres, paterno, materno) está deprecada."""
+    if paterno is not None:
+        warnings.warn(
+            "obtain_sep_cedula(nombres, paterno, materno) está deprecado y ya no es funcional. "
+            "El endpoint de SEP ahora requiere CURP. "
+            "Use: obtain_sep_cedula(curp='XEXX010101MNEXXXA4')",
+            DeprecationWarning, stacklevel=2
+        )
+        raise TypeError(
+            "La firma obtain_sep_cedula(nombres, paterno, materno) ya no está soportada. "
+            "El endpoint cambió y ahora requiere CURP. "
+            "Use: obtain_sep_cedula('XEXX010101MNEXXXA4')"
+        )
+    return _obtain_sep_cedula(curp, **kwargs)
 
 
 @format_api
@@ -358,6 +393,29 @@ def store_token(name: str, company: str = "", description: str = "", permissions
 @inject()
 def retrieve_permissions(client: ApiMarketClient = None, configuration: RequestConfiguration = None):
     return client.api.v2.apimarket.permissions.get, configuration
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatibility aliases — estas funciones fueron renombradas en v4.6.
+# Emiten DeprecationWarning al ser llamadas; serán eliminadas en una versión futura.
+# ---------------------------------------------------------------------------
+
+def get_clinica_by_curp(curp: str, **kwargs):
+    """Deprecado. Use get_clinic_by_curp()."""
+    warnings.warn(
+        "get_clinica_by_curp() está deprecado. Use get_clinic_by_curp() en su lugar.",
+        DeprecationWarning, stacklevel=2
+    )
+    return get_clinic_by_curp(curp, **kwargs)
+
+
+def consult_clinica_by_curp(curp: str, **kwargs):
+    """Deprecado. Use consult_clinic_by_curp()."""
+    warnings.warn(
+        "consult_clinica_by_curp() está deprecado. Use consult_clinic_by_curp() en su lugar.",
+        DeprecationWarning, stacklevel=2
+    )
+    return consult_clinic_by_curp(curp, **kwargs)
 
 
 @inject()

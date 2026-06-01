@@ -148,6 +148,31 @@ class IdseListCertificatesAction(argparse.Action):
         setattr(namespace, self.dest, values)
 
 
+def _deprecated_action(new_flag: str, base_class):
+    """Crea una subclase de acción que imprime aviso de deprecación antes de ejecutar."""
+    class _DeprecatedAction(base_class):
+        def __call__(self, parser, namespace, values, option_string=None):
+            print(
+                f"\n[DEPRECADO] '{option_string}' ya no estará disponible en futuras versiones. "
+                f"Use '{new_flag}' en su lugar.\n",
+                file=sys.stderr
+            )
+            super().__call__(parser, namespace, values, option_string)
+    return _DeprecatedAction
+
+
+class ObtainCedulaLegacyAction(argparse.Action):
+    """Acción para la firma vieja --obtain-cedula NOMBRES PATERNO MATERNO (endpoint cambió)."""
+    def __call__(self, parser, namespace, values, option_string=None):
+        print(
+            "\n[DEPRECADO] '--obtain-cedula NOMBRES PATERNO MATERNO' ya no es funcional.\n"
+            "  El endpoint de SEP ahora requiere CURP en lugar de nombre y apellidos.\n"
+            "  Use: -oc CURP  (ej: -oc XEXX010101MNEXXXA4)\n",
+            file=sys.stderr
+        )
+        sys.exit(1)
+
+
 class APIMarketParser(argparse.ArgumentParser):
     def error(self, message):
         print(f"Error: {message}", file=sys.stderr)
@@ -259,6 +284,67 @@ def parse_args(args):
         action="store_const", const=logging.INFO)
     parser.add_argument("-vv", "--very-verbose", dest="loglevel", help="Nivel de log: DEBUG",
         action="store_const", const=logging.DEBUG)
+
+    # -----------------------------------------------------------------------
+    # Flags deprecados — ocultos de --help, mantenidos por compatibilidad.
+    # Serán eliminados en una versión futura.
+    # Nota: -cc, -vc y -oc (firma de 3 args) no pueden restaurarse porque sus
+    # short flags ahora tienen otro significado en el nuevo CLI.
+    # -----------------------------------------------------------------------
+    parser.add_argument("-c", dest="_dep_c", metavar="CURP", type=str,
+        action=_deprecated_action("-vc", CURPDetailsAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-cd", dest="_dep_cd",
+        nargs=8, metavar=("NOMBRES", "PATERNO", "MATERNO", "DIA", "MES", "ANO", "ENTIDAD", "SEXO"),
+        action=_deprecated_action("-cc", GetCURPFromDetailsAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-rfc", dest="_dep_rfc", metavar="CURP",
+        action=_deprecated_action("-ro", GetRFCFromCURPAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-crfc", dest="_dep_crfc",
+        nargs=6, metavar=("NOMBRES", "PATERNO", "MATERNO", "DIA", "MES", "ANO"),
+        action=_deprecated_action("-cr", CalculateRFCAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-lucp", dest="_dep_lucp", nargs=1, metavar="CP",
+        action=_deprecated_action("-lu", LocateUMFByCPAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-lnc", dest="_dep_lnc", nargs=1, metavar="CURP",
+        action=_deprecated_action("-ln", LocateNSSByCURPAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-cv", dest="_dep_cv", nargs=2, metavar=("NSS", "CURP"),
+        action=_deprecated_action("-vi", CheckVigencyAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("--get-clinica-by-curp", dest="_dep_cc_clinic", nargs=1, metavar="CURP",
+        action=_deprecated_action("-cl", GetClinicByCURPAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-l", dest="_dep_l", nargs=2, metavar=("CURP", "NSS"),
+        action=_deprecated_action("-hl", GetLaborHistoryAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-vce", dest="_dep_vce", metavar="FOLIO",
+        action=_deprecated_action("-vr", ValidateCertificateAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("--obtain-cedula", dest="_dep_oc_legacy",
+        nargs=3, metavar=("NOMBRES", "PATERNO", "MATERNO"),
+        action=ObtainCedulaLegacyAction,
+        help=argparse.SUPPRESS)
+    parser.add_argument("--validate-sat-data", dest="_dep_vs", nargs=4,
+        metavar=("NOMBRE", "RFC", "REGIMEN", "CP"),
+        action=_deprecated_action("-vs", ValidateSATDataAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-cn", dest="_dep_cn", nargs=1, metavar="NSS",
+        action=_deprecated_action("-bc", SearchCreditByNSSAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-fd", dest="_dep_fd", nargs=1, metavar="RFC",
+        action=_deprecated_action("-df", FiscalDataRetrieverAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-sa", dest="_dep_sa", nargs=1, metavar="NSS",
+        action=_deprecated_action("-si", InfonavitSubAccountRetrieverAction),
+        help=argparse.SUPPRESS)
+    parser.add_argument("-st", dest="_dep_st", nargs=6,
+        metavar=("NOMBRE", "EMPRESA", "DESCRIPCION", "PERMISOS", "RFC", "CIEC"),
+        action=_deprecated_action("-gt", StoreTokenAction),
+        help=argparse.SUPPRESS)
+
     return parser.parse_args(args)
 
 

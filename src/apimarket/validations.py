@@ -1,5 +1,8 @@
 import re
+import warnings
 from enum import Enum
+
+_MISSING = object()  # sentinel to distinguish old 2-arg from new 3-arg constructors
 
 UUID_PATTERN = re.compile(
     r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$'
@@ -26,13 +29,26 @@ class InvalidCURPError(Exception):
         INVALID_FORMAT = "INVALID_CURP_FORMAT"
         INVALID_DIGIT  = "INVALID_CURP_DIGIT"
 
-    def __init__(self, curp: str, code: Code, message: str):
-        self.curp = curp
-        self.code = code
-        self.message = message
+    def __init__(self, curp: str, code=_MISSING, message=_MISSING):
+        if message is _MISSING:
+            # Backward compat: old signature was (curp, message)
+            warnings.warn(
+                "InvalidCURPError(curp, message) está deprecado. "
+                "Use InvalidCURPError(curp, InvalidCURPError.Code.X, message).",
+                DeprecationWarning, stacklevel=2
+            )
+            self.curp = curp
+            self.code = None
+            self.message = code
+        else:
+            self.curp = curp
+            self.code = code
+            self.message = message
         super().__init__(self.message)
 
     def __str__(self):
+        if self.code is None:
+            return f"CURP: {self.curp} - {self.message}"
         return f"[{self.code.value}] CURP: {self.curp} - {self.message}"
 
 
@@ -42,13 +58,26 @@ class InvalidNSSError(Exception):
         INVALID_FORMAT = "INVALID_NSS_FORMAT"
         INVALID_DIGIT  = "INVALID_NSS_DIGIT"
 
-    def __init__(self, nss: str, code: Code, message: str):
-        self.nss = nss
-        self.code = code
-        self.message = message
+    def __init__(self, nss: str, code=_MISSING, message=_MISSING):
+        if message is _MISSING:
+            # Backward compat: old signature was (nss, message)
+            warnings.warn(
+                "InvalidNSSError(nss, message) está deprecado. "
+                "Use InvalidNSSError(nss, InvalidNSSError.Code.X, message).",
+                DeprecationWarning, stacklevel=2
+            )
+            self.nss = nss
+            self.code = None
+            self.message = code
+        else:
+            self.nss = nss
+            self.code = code
+            self.message = message
         super().__init__(self.message)
 
     def __str__(self):
+        if self.code is None:
+            return f"NSS: {self.nss} - {self.message}"
         return f"[{self.code.value}] NSS: {self.nss} - {self.message}"
 
 
@@ -56,13 +85,26 @@ class InvalidRFCError(Exception):
     class Code(Enum):
         INVALID_FORMAT = "INVALID_RFC_FORMAT"
 
-    def __init__(self, rfc: str, code: Code, message: str):
-        self.rfc = rfc
-        self.code = code
-        self.message = message
+    def __init__(self, rfc: str, code=_MISSING, message=_MISSING):
+        if message is _MISSING:
+            # Backward compat: old signature was (rfc, message)
+            warnings.warn(
+                "InvalidRFCError(rfc, message) está deprecado. "
+                "Use InvalidRFCError(rfc, InvalidRFCError.Code.X, message).",
+                DeprecationWarning, stacklevel=2
+            )
+            self.rfc = rfc
+            self.code = None
+            self.message = code
+        else:
+            self.rfc = rfc
+            self.code = code
+            self.message = message
         super().__init__(self.message)
 
     def __str__(self):
+        if self.code is None:
+            return f"RFC: {self.rfc} - {self.message}"
         return f"[{self.code.value}] RFC: {self.rfc} - {self.message}"
 
 
