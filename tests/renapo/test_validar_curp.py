@@ -3,6 +3,8 @@ import apimarket
 from apimarket.validations import InvalidCURPError
 from kiota_abstractions.api_error import APIError
 
+from datos import CURP_INTEGRACION
+
 
 class TestValidarCurpUnit:
     @pytest.mark.parametrize("curp, expected_code", [
@@ -19,7 +21,7 @@ class TestValidarCurpUnit:
 
 @pytest.mark.integracion
 class TestValidarCurpIntegration:
-    CURP = "XEXX010101MNEXXXA4"
+    CURP = CURP_INTEGRACION
 
     def test_reaches_api_without_validation_error(self, sdk):
         try:
@@ -65,7 +67,7 @@ class TestValidarCurpIntegration:
 @pytest.mark.anyio
 async def test_async_valid_curp_returns_success(sdk_async):
     try:
-        response = await apimarket.fetch_curp_details("XEXX010101MNEXXXA4")
+        response = await apimarket.fetch_curp_details(CURP_INTEGRACION)
         if response.success and response.data:
             assert response.data.nombres is not None
     except APIError:

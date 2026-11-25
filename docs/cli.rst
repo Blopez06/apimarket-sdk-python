@@ -7,9 +7,12 @@ Uso general::
 
     apimarket [GRUPO] [OPCIONES]
 
-Para ver todos los comandos disponibles::
+La ayuda está en tres niveles; cada comando muestra parámetros, un ejemplo y sus códigos de error::
 
-    apimarket --help
+    apimarket -h                          # todos los comandos por área
+    apimarket sat -h                      # los servicios de un área
+    apimarket sat declaraciones -h        # un servicio
+    apimarket errores curp                # códigos que contienen "curp"
 
 Para ver la versión instalada::
 
@@ -233,21 +236,265 @@ Crea y guarda un nuevo token en la cuenta. ``PERMISOS`` es una lista separada po
 
 ----
 
+Servicios por grupo
+-------------------
+
+Además de las opciones anteriores, la CLI ofrece estos servicios::
+
+    apimarket GRUPO SERVICIO [--parametro valor ...]
+
+Para listarlos, ver los parámetros de uno o usar el modo de pruebas:
+
+.. code-block:: bash
+
+    apimarket servicios
+    apimarket sat declaraciones --help
+    apimarket repuve vehiculo --placas ABC1234 --sandbox
+
+Los parámetros de tipo archivo reciben una ruta. Los que reciben listas de objetos u objetos aceptan JSON
+o ``@archivo.json``; las listas de texto se separan con comas.
+
+.. warning::
+
+    No use ``--sandbox`` como garantía en operaciones que crean, modifican o eliminan
+    (``cuenta crear-token``, ``ai plantilla-*``, ``ai procesar-*`` e ``imss idse-*``).
+
+Inteligencia artificial
+~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``ai dataset-fila``
+     - Consulta una fila de un dataset.
+   * - ``ai dataset-filas``
+     - Consulta las filas de un dataset.
+   * - ``ai datasets``
+     - Lista los datasets del token.
+   * - ``ai ocr-id``
+     - Extrae los datos de una identificación (JPG, PNG o PDF, hasta 20 MB).
+   * - ``ai plantilla-actualizar``
+     - Reemplaza el contenido de una plantilla.
+   * - ``ai plantilla-crear``
+     - Sube una plantilla PDFMe en formato JSON.
+   * - ``ai plantilla-generar``
+     - Genera un PDF a partir de una plantilla.
+   * - ``ai procesar-ejecutar``
+     - Ejecuta el procesamiento de un dataset. Consume saldo.
+   * - ``ai procesar-eliminar``
+     - Elimina un dataset y sus transacciones. No se puede deshacer.
+   * - ``ai procesar-estado``
+     - Consulta el estado de las transacciones de procesamiento.
+   * - ``ai procesar-estimar``
+     - Estima el costo de procesar un dataset.
+   * - ``ai procesar-exportar``
+     - Exporta los resultados del procesamiento.
+   * - ``ai procesar-planear``
+     - Define los servicios que enriquecen un dataset.
+   * - ``ai procesar-subir``
+     - Sube un archivo CSV para su procesamiento.
+
+Cuenta
+~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``cuenta crear-token``
+     - Crea un token en la cuenta.
+   * - ``cuenta llave-publica``
+     - Obtiene la llave pública de API Market.
+   * - ``cuenta saldo``
+     - Consulta el saldo disponible de la cuenta.
+
+Geolocalización
+~~~~~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``geo codigos-postales``
+     - Busca códigos postales.
+
+IMSS e IDSE
+~~~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``imss datos-nss``
+     - Obtiene los datos asociados a un NSS.
+   * - ``imss historial-laboral-lite``
+     - Solicita el historial laboral en versión ligera.
+   * - ``imss idse-capturar``
+     - Envía movimientos afiliatorios a IDSE.
+   * - ``imss idse-consultar``
+     - Consulta el resultado de un lote de movimientos afiliatorios.
+   * - ``imss idse-registros-patronales``
+     - Solicita los registros patronales disponibles en IDSE.
+   * - ``imss pension``
+     - Consulta la pensión del IMSS por NSS.
+   * - ``imss rpci``
+     - Consulta el servicio RPCI del IMSS.
+   * - ``imss trayectoria-laboral``
+     - Genera el reporte de trayectoria laboral.
+   * - ``imss umf-asignada``
+     - Consulta la UMF asignada a un NSS.
+
+INFONAVIT
+~~~~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``infonavit datos-acreditado``
+     - Obtiene los datos del acreditado.
+   * - ``infonavit datos-cobranza``
+     - Consulta los datos de cobranza de un crédito.
+   * - ``infonavit datos-contacto``
+     - Obtiene los datos de contacto por NSS.
+   * - ``infonavit datos-financieros``
+     - Consulta los datos financieros de un crédito.
+   * - ``infonavit estado-cuenta``
+     - Obtiene el estado de cuenta de un crédito.
+   * - ``infonavit ficha-tecnica``
+     - Genera la ficha técnica del crédito.
+   * - ``infonavit historico``
+     - Consulta el histórico de un crédito.
+   * - ``infonavit reporte-historico``
+     - Obtiene el reporte histórico de un crédito.
+   * - ``infonavit reporte-intereses``
+     - Obtiene el reporte de intereses de un crédito.
+
+RENAPO
+~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``renapo acta-nacimiento``
+     - Obtiene el acta de nacimiento por CURP.
+
+REPUVE
+~~~~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``repuve propietario``
+     - Consulta el propietario de un vehículo por número de serie o placas.
+   * - ``repuve robo``
+     - Consulta si un vehículo tiene reporte de robo.
+   * - ``repuve vehiculo``
+     - Consulta los datos de un vehículo por número de serie o placas.
+
+SAT
+~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``sat buzon-leer``
+     - Abre un mensaje del buzón tributario.
+   * - ``sat buzon-leidos``
+     - Lista los mensajes leídos del buzón tributario.
+   * - ``sat buzon-medios-contacto``
+     - Consulta los medios de contacto del buzón tributario.
+   * - ``sat buzon-nuevos``
+     - Lista los mensajes nuevos del buzón tributario.
+   * - ``sat certificados-efirma``
+     - Lista los certificados de e.firma.
+   * - ``sat certificados-rfc``
+     - Obtiene los certificados asociados a un RFC.
+   * - ``sat certificados-sello-digital``
+     - Lista los certificados de sello digital.
+   * - ``sat cif``
+     - Obtiene la Cédula de Identificación Fiscal.
+   * - ``sat csf``
+     - Obtiene la Constancia de Situación Fiscal.
+   * - ``sat datos-idcif``
+     - Obtiene los datos fiscales con el RFC y el idCIF.
+   * - ``sat declaracion-acuse``
+     - Descarga el acuse de una declaración.
+   * - ``sat declaracion-representacion``
+     - Obtiene la representación impresa de una declaración.
+   * - ``sat declaraciones``
+     - Lista las declaraciones de un ejercicio.
+   * - ``sat facturacion-perfil``
+     - Consulta el perfil de facturación.
+   * - ``sat facturas-buscar``
+     - Busca CFDI en el portal de facturación del SAT.
+   * - ``sat facturas-descargar``
+     - Descarga un CFDI.
+   * - ``sat informacion``
+     - Consulta la información general del contribuyente.
+   * - ``sat leer-csf``
+     - Extrae los datos de una Constancia de Situación Fiscal (PDF o imagen).
+   * - ``sat opinion-cumplimiento``
+     - Obtiene la opinión de cumplimiento (32-D).
+   * - ``sat validar-receptor``
+     - Valida los datos fiscales de un receptor de CFDI contra el padrón.
+   * - ``sat validar-rfc``
+     - Valida un RFC ante el SAT.
+   * - ``sat verificar-efirma``
+     - Verifica una firma electrónica.
+
+SEP
+~~~
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Comando
+     - Descripción
+   * - ``sep constancia-profesional``
+     - Descarga la constancia profesional de la SEP por CURP.
+
+----
+
 Manejo de errores
 -----------------
 
-Cuando los datos de entrada no pasan la validación, el CLI retorna un mensaje de error
-con el código correspondiente y sale con código 1:
+Todos los comandos muestran los errores como ``Error [CÓDIGO]: mensaje`` en la salida de errores. Salen con
+código 2 si los argumentos son incorrectos y con 1 en los demás casos.
 
 .. code-block:: bash
 
     $ apimarket -vc INVALIDA
     Error [INVALID_CURP_LENGTH]: Longitud inválida: se esperaban 18 caracteres, se recibieron 8.
 
-    $ apimarket -vc 123456789012345678
-    Error [INVALID_CURP_FORMAT]: El formato del CURP es inválido.
+    $ apimarket sat leer-csf --csf no-existe.pdf
+    Error [FILE_NOT_FOUND]: No existe el archivo 'no-existe.pdf'.
 
-    $ apimarket -vc LOOA531113HTCPBN09
-    Error [INVALID_CURP_DIGIT]: Dígito verificador inválido.
+    $ apimarket cuenta saldo
+    {"success": false, "codigoValidacion": "...", "message": "El token proporcionado no es valido.", "status": 401}
+    Error [API_KEY_UNAUTHORIZED]: El token proporcionado no es valido. (status 401)
+
+    $ apimarket errores        # catálogo completo
 
 Para el catálogo completo de códigos de error ver :doc:`error_catalog`.

@@ -15,7 +15,7 @@ class TestLista69bUnit:
             apimarket.search_sat_lista69b(rfc=rfc)
         assert exc_info.value.code == InvalidRFCError.Code.INVALID_FORMAT
 
-    def test_no_params_does_not_raise_locally(self):
+    def test_no_params_does_not_raise_locally(self, server):
         # La validación de parámetros ausentes la hace el API, no el SDK
         # Solo verificamos que no explota localmente
         try:

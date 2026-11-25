@@ -32,6 +32,15 @@ Crea un archivo ``.env`` en la raíz del proyecto con las variables necesarias:
     IDSEPRO_BEARER_TOKEN=tu_bearer_token
     IDSEPRO_API_KEY=tu_api_key_idse
 
+Las pruebas de integración envían una CURP de prueba. Para usar otra sin guardarla en el repositorio:
+
+.. code-block:: bash
+
+    APIMARKET_TEST_CURP=tu_curp
+
+Las pruebas que usan el fixture ``sdk`` consumen saldo salvo en modo sandbox. Las de ``sdk_sandbox`` siempre
+usan sandbox.
+
 Para correr en modo sandbox (sin consumir créditos reales):
 
 .. code-block:: bash
@@ -81,22 +90,37 @@ Estructura de tests
 .. code-block:: text
 
     tests/
-    ├── conftest.py              # fixtures compartidos (sdk, sdk_async)
-    ├── validations/
-    │   ├── test_curp.py         # validaciones de CURP
-    │   ├── test_rfc.py          # validaciones de RFC
-    │   └── test_nss.py          # validaciones de NSS
-    ├── renapo/
-    │   ├── test_validar_curp.py # unitarios + integración
-    │   └── test_obtener_curp.py # integración
-    ├── sat/
-    │   └── test_calcular_rfc.py # integración
+    ├── conftest.py              # fixtures compartidos (sdk, sdk_async, sdk_sandbox, server)
+    ├── support.py               # servidor local y comprobaciones compartidas
+    ├── cases.py                 # petición esperada de cada servicio
+    ├── datos.py                 # datos de las pruebas de integración
+    ├── services/
+    │   ├── test_core.py         # errores, reintentos, archivos y concurrencia
+    │   ├── test_catalog.py      # códigos de error y su catálogo
+    │   ├── test_error_codes.py  # un caso real por cada código
+    │   └── test_help.py         # ayuda de la CLI y sus ejemplos
+    ├── validations/             # validaciones de CURP, RFC, NSS y fecha
+    ├── ai/                      # cada área tiene su archivo test_<area>_servicios.py
+    ├── cuenta/
+    ├── geo/
     ├── imss/
-    │   └── test_idse_pro.py     # integración
-    ├── sep/                     # pendiente
-    ├── infonavit/               # pendiente
-    ├── administracion/          # pendiente
-    └── repuve/                  # pendiente
+    ├── infonavit/
+    ├── renapo/
+    ├── repuve/
+    ├── sat/
+    └── sep/
+
+----
+
+Ver los códigos de error
+------------------------
+
+Muestra qué produce el SDK en cada caso, sin red ni llave:
+
+.. code-block:: bash
+
+    python tests/ver_errores.py
+    python tests/ver_errores.py reporte.md
 
 ----
 
@@ -104,6 +128,12 @@ Fixtures disponibles
 --------------------
 
 Definidos en ``tests/conftest.py`` y disponibles en todos los tests:
+
+``server``
+  Servidor HTTP local que registra las peticiones. Permite probar un servicio sin red ni llave real.
+
+``sdk_sandbox``
+  Configura llamadas síncronas en modo sandbox. Usar en las pruebas de integración de los servicios por grupo.
 
 ``sdk``
   Configura el SDK para llamadas síncronas. Usar en tests de integración normales.
@@ -127,7 +157,11 @@ Definidos en ``tests/conftest.py`` y disponibles en todos los tests:
 Convenciones
 ------------
 
-- Los tests unitarios no usan fixtures ni markers especiales.
-- Los tests de integración siempre llevan ``@pytest.mark.integracion`` y el fixture ``sdk``.
+- Los tests unitarios no llevan markers; solo usan el fixture ``server`` cuando necesitan observar la petición.
+- Los tests de integración siempre llevan ``@pytest.mark.integracion`` y el fixture ``sdk`` o ``sdk_sandbox``.
+- Un servicio nuevo requiere su caso en ``tests/cases.py``; una prueba falla si falta.
+- Cada parámetro requiere un dato inválido en ``tests/validations/test_every_parameter.py``.
+- Un parámetro nuevo requiere su descripción y ejemplo en ``apimarket/cli_help.py``.
+- Un código de error nuevo se agrega a ``apimarket/errors.py`` y a ``docs/error_catalog.rst``.
 - Usar ``@pytest.mark.parametrize`` para colecciones de datos de prueba.
 - Los datos de prueba (CURPs, NSS, RFC) son fijos y conocidos — nunca dinámicos.

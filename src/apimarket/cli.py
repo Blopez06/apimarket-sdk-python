@@ -4,8 +4,7 @@ import logging
 import sys
 
 from apimarket import *
-from apimarket import __version__
-from apimarket.validations import InvalidCURPError, InvalidNSSError, InvalidRFCError, InvalidFolioError, InvalidBirthDateError
+from apimarket import __version__, cli_help, services_cli
 
 __author__ = "Carlos Eduardo Sanchez Torres (sanchezcarlosjr)"
 __copyright__ = "API MARKET"
@@ -25,11 +24,15 @@ class CLIAction(argparse.Action):
         _logger.debug("Fetching apimarket...")
         if isinstance(values, (str, int)):
             values = [values]
-        try:
-            print(f"{to_json(self.fetch(*values))}")
-        except (InvalidCURPError, InvalidNSSError, InvalidRFCError, InvalidFolioError, InvalidBirthDateError) as e:
-            print(f"Error [{e.code.value}]: {e.message}", file=sys.stderr)
-            sys.exit(1)
+        response = self.fetch(*values)
+        print(to_json(response))
+        # Algunos modelos no declaran estos campos y quedan en additional_data.
+        extra = getattr(response, "additional_data", {})
+        status = getattr(response, "status", None) or extra.get("status")
+        if isinstance(status, int) and status >= 500:
+            # La API respondió HTTP 200, pero reporta la falla del proveedor en "status".
+            message = getattr(response, "message", None) or extra.get("message")
+            services_cli.report_error(ApiMarketError(200, {"status": status, "message": message}))
         _logger.debug("Script ends here")
         setattr(namespace, self.dest, values)
 
@@ -173,29 +176,13 @@ class ObtainCedulaLegacyAction(argparse.Action):
         sys.exit(1)
 
 
-class APIMarketParser(argparse.ArgumentParser):
-    def error(self, message):
-        print(f"Error: {message}", file=sys.stderr)
-        print("Ejecuta 'apimarket --help' para ver todos los comandos disponibles.", file=sys.stderr)
-        sys.exit(2)
+class APIMarketParser(services_cli.Parser):
+    """Los errores de uso se muestran con el código CLI_ARGUMENTS_INVALID."""
 
 
 def parse_args(args):
-    parser = APIMarketParser(
-        description="API Market — SDK de Python para servicios gubernamentales mexicanos",
-        formatter_class=argparse.RawTextHelpFormatter,
-        usage=(
-            "\n"
-            "  apimarket [RENAPO]    -bn CURP | -vc CURP | -cc NOMBRES PATERNO MATERNO DIA MES AÑO ENTIDAD SEXO\n"
-            "  apimarket [SAT]       -ro CURP | -cr NOMBRES PATERNO MATERNO DIA MES AÑO\n"
-            "                        -vs NOMBRE RFC REGIMEN CP | -df RFC | -l69 RFC\n"
-            "  apimarket [IMSS]      -lu CP | -ln CURP | -vi NSS CURP | -cl CURP | -hl CURP NSS\n"
-            "  apimarket [SEP]       -ce CEDULA | -vr FOLIO | -oc CURP\n"
-            "  apimarket [INFONAVIT] -bc NSS | -si NSS\n"
-            "  apimarket [IDSE Pro]  -lc\n"
-            "  apimarket [Account]   -pm | -gt NOMBRE EMPRESA DESCRIPCION PERMISOS RFC CIEC\n"
-        ),
-    )
+    parser = APIMarketParser(prog="apimarket")
+    parser.renderer = lambda: cli_help.main_help(parser, __version__)
     parser.add_argument("--version", action="version", version=f"apimarket {__version__}")
 
     renapo = parser.add_argument_group("RENAPO")
@@ -368,7 +355,17 @@ def main(args):
       args (List[str]): command line parameters as list of strings
           (for example  ``["--verbose", "42"]``).
     """
-    args = parse_args(args)
+    if services_cli.handles(args):
+        services_cli.main(args)
+        return
+    args = list(args) or ["--help"]  # sin argumentos se muestra la ayuda
+    if not args[0].startswith("-"):
+        services_cli.unknown_area(args[0])
+    # Las acciones consultan la API mientras se leen los argumentos.
+    try:
+        args = parse_args(args)
+    except services_cli.HANDLED_ERRORS as e:
+        services_cli.report_error(e)
     setup_logging(args.loglevel)
 
 
