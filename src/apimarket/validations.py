@@ -2,6 +2,8 @@ import re
 import warnings
 from enum import Enum
 
+from apimarket.field_codes import FILE_CODES, PARAMETER_CODES
+
 _MISSING = object()  # sentinel to distinguish old 2-arg from new 3-arg constructors
 
 UUID_PATTERN = re.compile(
@@ -9,7 +11,14 @@ UUID_PATTERN = re.compile(
 )
 
 
-class InvalidFolioError(Exception):
+class ValidationError(ValueError):
+    """Base de los errores detectados antes de llamar a la API.
+
+    Todas sus subclases exponen ``code`` (miembro de un Enum) y ``message``.
+    """
+
+
+class InvalidFolioError(ValidationError):
     class Code(Enum):
         INVALID_FORMAT = "INVALID_FOLIO_FORMAT"
 
@@ -23,7 +32,7 @@ class InvalidFolioError(Exception):
         return f"[{self.code.value}] Folio: {self.folio} - {self.message}"
 
 
-class InvalidCURPError(Exception):
+class InvalidCURPError(ValidationError):
     class Code(Enum):
         INVALID_LENGTH = "INVALID_CURP_LENGTH"
         INVALID_FORMAT = "INVALID_CURP_FORMAT"
@@ -52,7 +61,7 @@ class InvalidCURPError(Exception):
         return f"[{self.code.value}] CURP: {self.curp} - {self.message}"
 
 
-class InvalidNSSError(Exception):
+class InvalidNSSError(ValidationError):
     class Code(Enum):
         INVALID_LENGTH = "INVALID_NSS_LENGTH"
         INVALID_FORMAT = "INVALID_NSS_FORMAT"
@@ -81,7 +90,7 @@ class InvalidNSSError(Exception):
         return f"[{self.code.value}] NSS: {self.nss} - {self.message}"
 
 
-class InvalidRFCError(Exception):
+class InvalidRFCError(ValidationError):
     class Code(Enum):
         INVALID_FORMAT = "INVALID_RFC_FORMAT"
 
@@ -108,7 +117,7 @@ class InvalidRFCError(Exception):
         return f"[{self.code.value}] RFC: {self.rfc} - {self.message}"
 
 
-class InvalidBirthDateError(Exception):
+class InvalidBirthDateError(ValidationError):
     class Code(Enum):
         INVALID_BIRTH_DAY_FORMAT = "INVALID_BIRTH_DAY_FORMAT"
         INVALID_BIRTH_MONTH_FORMAT = "INVALID_BIRTH_MONTH_FORMAT"
@@ -124,26 +133,114 @@ class InvalidBirthDateError(Exception):
         return f"[{self.code.value}] Value: {self.value} - {self.message}"
 
 
+class InvalidCreditError(ValidationError):
+    class Code(Enum):
+        INVALID_FORMAT = "INVALID_CREDIT_FORMAT"
+
+    def __init__(self, credit: str, code: Code, message: str):
+        self.credit = credit
+        self.code = code
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"[{self.code.value}] Crédito: {self.credit} - {self.message}"
+
+
+def validate_credit_number(credit):
+    """Valida el formato de un número de crédito INFONAVIT."""
+    if not re.fullmatch(r'[0-9]{10}', str(credit)):
+        raise InvalidCreditError(str(credit), InvalidCreditError.Code.INVALID_FORMAT,
+                                 "El número de crédito INFONAVIT debe contener exactamente 10 dígitos numéricos.")
+
+    return credit
+
+
+def code_token(parameter: str) -> str:
+    """Nombre del parámetro dentro de un código: ``movimientos[0].apellidoPaterno`` → ``MOVIMIENTOS_APELLIDO_PATERNO``."""
+    name = re.sub(r"\[\d+\]", "", parameter)
+    name = re.sub(r"(?<=[a-z0-9])(?=[A-Z])", "_", name)
+    return re.sub(r"[^A-Za-z0-9]+", "_", name).strip("_").upper()
+
+
+def _field_codes(name: str, table: dict, qualified_name: str) -> Enum:
+    """Un miembro ``<CAMPO>_<MOTIVO>`` con valor ``INVALID_<CAMPO>_<MOTIVO>``."""
+    members = [(f"{field}_{reason}", f"INVALID_{field}_{reason}")
+               for field, reasons in table.items() for reason in reasons.split()]
+    return Enum(name, members, module=__name__, qualname=qualified_name)
+
+
+class _FieldError(ValidationError):
+    """Error de un parámetro; su código nombra el campo y el motivo."""
+
+    def __init__(self, parameter: str, code: Enum, message: str):
+        self.parameter = parameter
+        self.code = code
+        self.message = message
+        super().__init__(self.message)
+
+    @classmethod
+    def of(cls, parameter: str, reason: str, message: str):
+        return cls(parameter, cls.Code[f"{code_token(parameter)}_{reason}"], message)
+
+
+class InvalidParameterError(_FieldError):
+    Code = _field_codes("Code", PARAMETER_CODES, "InvalidParameterError.Code")
+
+    def __str__(self):
+        return f"[{self.code.value}] Parámetro: {self.parameter} - {self.message}"
+
+
+class InvalidFileError(_FieldError):
+    Code = _field_codes("Code", FILE_CODES, "InvalidFileError.Code")
+
+    def __str__(self):
+        return f"[{self.code.value}] Archivo: {self.parameter} - {self.message}"
+
+
+class ConfigurationError(ValidationError):
+    class Code(Enum):
+        API_KEY_MISSING = "CONFIG_API_KEY_MISSING"
+        IDSE_CREDENTIALS_MISSING = "CONFIG_IDSE_CREDENTIALS_MISSING"
+
+    def __init__(self, code: Code, message: str):
+        self.code = code
+        self.message = message
+        super().__init__(self.message)
+
+    def __str__(self):
+        return f"[{self.code.value}] {self.message}"
+
+
+def _require_text(value, parameter: str):
+    if value is None:
+        raise InvalidParameterError.of(parameter, "MISSING", f"El parámetro '{parameter}' es obligatorio.")
+    if not isinstance(value, str):
+        raise InvalidParameterError.of(parameter, "TYPE", f"El parámetro '{parameter}' debe ser texto.")
+
+
 def validate_birth_date(day, month, year):
     day_str, month_str, year_str = str(day), str(month), str(year)
-    if not day_str.isdigit() or len(day_str) < 2:
+    if not day_str.isdigit() or len(day_str) != 2:
         raise InvalidBirthDateError(day_str, InvalidBirthDateError.Code.INVALID_BIRTH_DAY_FORMAT,
-                                    "El día de nacimiento debe tener al menos 2 dígitos (ej. '06').")
-    if not month_str.isdigit() or len(month_str) < 2:
+                                    "El día de nacimiento debe tener exactamente 2 dígitos (ej. '06').")
+    if not month_str.isdigit() or len(month_str) != 2:
         raise InvalidBirthDateError(month_str, InvalidBirthDateError.Code.INVALID_BIRTH_MONTH_FORMAT,
-                                    "El mes de nacimiento debe tener al menos 2 dígitos (ej. '06').")
-    if not year_str.isdigit() or len(year_str) < 4:
+                                    "El mes de nacimiento debe tener exactamente 2 dígitos (ej. '06').")
+    if not year_str.isdigit() or len(year_str) != 4:
         raise InvalidBirthDateError(year_str, InvalidBirthDateError.Code.INVALID_BIRTH_YEAR_FORMAT,
-                                    "El año de nacimiento debe tener al menos 4 dígitos (ej. '1990').")
+                                    "El año de nacimiento debe tener exactamente 4 dígitos (ej. '1990').")
 
 
 def validate_folio_uuid(folio: str) -> str:
+    _require_text(folio, "folio")
     if not UUID_PATTERN.match(folio):
         raise InvalidFolioError(folio, InvalidFolioError.Code.INVALID_FORMAT, "El folio debe tener formato UUID válido (xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx).")
     return folio
 
 
 def validate_rfc(rfc):
+    _require_text(rfc, "rfc")
     pattern_individual = r'^[A-Z]{4}[0-9]{6}[A-Z0-9]{3}$'
     pattern_company    = r'^[A-Z]{3}[0-9]{6}[A-Z0-9]{3}$'
 
@@ -183,6 +280,7 @@ def calculate_curp_verification_digit(curp17):
 
 
 def validate_curp(curp):
+    _require_text(curp, "curp")
     if len(curp) != 18:
         raise InvalidCURPError(curp, InvalidCURPError.Code.INVALID_LENGTH, f"Longitud inválida: se esperaban 18 caracteres, se recibieron {len(curp)}.")
 
@@ -199,6 +297,7 @@ def validate_curp(curp):
 
 
 def validate_nss(nss):
+    _require_text(nss, "nss")
     if len(nss) != 11:
         raise InvalidNSSError(nss, InvalidNSSError.Code.INVALID_LENGTH, f"Longitud inválida: se esperaban 11 dígitos, se recibieron {len(nss)}.")
 

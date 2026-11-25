@@ -3,6 +3,8 @@ import apimarket
 from apimarket.validations import InvalidCURPError, InvalidNSSError
 from kiota_abstractions.api_error import APIError
 
+from datos import CURP_INTEGRACION
+
 CURP_VALIDA = "XEXX010101MNEXXXA4"
 NSS_VALIDO = "12345678952"
 
@@ -57,7 +59,7 @@ class TestLocateNssByCurpIntegration:
     def test_reaches_api_without_validation_error(self, sdk):
         # La CURP puede no tener NSS en IMSS — se acepta respuesta o error de API
         try:
-            response = apimarket.locate_nss_by_curp(CURP_VALIDA)
+            response = apimarket.locate_nss_by_curp(CURP_INTEGRACION)
             assert response is not None
             assert response.codigo_validacion is not None
         except APIError:
@@ -72,7 +74,7 @@ class TestLocateNssByCurpIntegration:
 class TestGetClinicByCurpIntegration:
     def test_reaches_api_without_validation_error(self, sdk):
         try:
-            response = apimarket.get_clinic_by_curp(CURP_VALIDA)
+            response = apimarket.get_clinic_by_curp(CURP_INTEGRACION)
             assert response is not None
             assert response.codigo_validacion is not None
         except APIError:

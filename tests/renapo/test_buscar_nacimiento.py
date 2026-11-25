@@ -3,6 +3,8 @@ import apimarket
 from apimarket.validations import InvalidCURPError
 from kiota_abstractions.api_error import APIError
 
+from datos import CURP_INTEGRACION
+
 CURP = "XEXX010101MNEXXXA4"
 
 
@@ -23,7 +25,7 @@ class TestBuscarNacimientoUnit:
 class TestBuscarNacimientoIntegration:
     def test_reaches_api_without_validation_error(self, sdk):
         try:
-            response = apimarket.get_birth_record(CURP)
+            response = apimarket.get_birth_record(CURP_INTEGRACION)
             assert response is not None
             assert response.codigo_validacion is not None
         except APIError:
@@ -31,9 +33,9 @@ class TestBuscarNacimientoIntegration:
 
     def test_response_has_personal_fields(self, sdk):
         try:
-            response = apimarket.get_birth_record(CURP)
+            response = apimarket.get_birth_record(CURP_INTEGRACION)
             if response.success and response.data:
-                assert response.data.curp == CURP
+                assert response.data.curp == CURP_INTEGRACION
                 assert response.data.nombre is not None
                 assert response.data.primer_apellido is not None
                 assert response.data.fecha_nacimiento is not None
@@ -43,7 +45,7 @@ class TestBuscarNacimientoIntegration:
 
     def test_response_has_datos_padres(self, sdk):
         try:
-            response = apimarket.get_birth_record(CURP)
+            response = apimarket.get_birth_record(CURP_INTEGRACION)
             if response.success and response.data and response.data.datos_padres:
                 assert response.data.datos_padres.nombre_padre is not None
                 assert response.data.datos_padres.nombre_madre is not None

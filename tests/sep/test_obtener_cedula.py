@@ -3,6 +3,8 @@ import apimarket
 from apimarket.validations import InvalidCURPError
 from kiota_abstractions.api_error import APIError
 
+from datos import CURP_INTEGRACION
+
 CURP = "XEXX010101MNEXXXA4"
 
 
@@ -23,7 +25,7 @@ class TestObtenerCedulaUnit:
 class TestObtenerCedulaIntegration:
     def test_reaches_api_without_validation_error(self, sdk):
         try:
-            response = apimarket.obtain_sep_cedula(CURP)
+            response = apimarket.obtain_sep_cedula(CURP_INTEGRACION)
             assert response is not None
             assert response.codigo_validacion is not None
         except APIError:
@@ -31,12 +33,12 @@ class TestObtenerCedulaIntegration:
 
     def test_response_data_is_list(self, sdk):
         try:
-            response = apimarket.obtain_sep_cedula(CURP)
+            response = apimarket.obtain_sep_cedula(CURP_INTEGRACION)
             if response.success and response.data:
                 assert isinstance(response.data, list)
                 item = response.data[0]
                 assert item.id_cedula is not None
-                assert item.curp == CURP
+                assert item.curp == CURP_INTEGRACION
         except APIError:
             pass
 

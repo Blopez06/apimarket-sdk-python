@@ -3,6 +3,8 @@ import apimarket
 from apimarket.validations import InvalidCURPError
 from kiota_abstractions.api_error import APIError
 
+from datos import CURP_INTEGRACION
+
 CURP = "XEXX010101MNEXXXA4"
 
 
@@ -23,7 +25,7 @@ class TestObtenerRfcUnit:
 class TestObtenerRfcIntegration:
     def test_reaches_api_without_validation_error(self, sdk):
         try:
-            response = apimarket.get_rfc_from_curp(CURP)
+            response = apimarket.get_rfc_from_curp(CURP_INTEGRACION)
             assert response is not None
             assert response.codigo_validacion is not None
         except APIError:
@@ -31,7 +33,7 @@ class TestObtenerRfcIntegration:
 
     def test_response_with_rfc_has_typed_data(self, sdk):
         try:
-            response = apimarket.get_rfc_from_curp(CURP)
+            response = apimarket.get_rfc_from_curp(CURP_INTEGRACION)
             if response.success and response.data is not None:
                 assert isinstance(response.data.rfc, str)
                 assert len(response.data.rfc) >= 12
